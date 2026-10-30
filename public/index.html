@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Win95 Slides</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f00' d='M1 1h6v6H1z'/%3E%3Cpath fill='%230c0' d='M9 1h6v6H9z'/%3E%3Cpath fill='%2300f' d='M1 9h6v6H1z'/%3E%3Cpath fill='%23fc0' d='M9 9h6v6H9z'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --face: #c0c0c0; --hi: #fff; --lo: #808080; --dk: #000; --navy: #000080; --teal: #008080;
+    --raised: inset -1px -1px var(--dk), inset 1px 1px var(--hi), inset -2px -2px var(--lo), inset 2px 2px #dfdfdf;
+    --sunken: inset -1px -1px var(--hi), inset 1px 1px var(--lo), inset -2px -2px #dfdfdf, inset 2px 2px var(--dk);
+    --pressed: inset -1px -1px var(--hi), inset 1px 1px var(--dk), inset -2px -2px #dfdfdf, inset 2px 2px var(--lo);
+    --bar-h: 36px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { font: 12px/1.3 "MS Sans Serif", "Microsoft Sans Serif", Tahoma, "Segoe UI", Arial, sans-serif; color: #000; }
+  button { font: inherit; }
+
+  #app { position: fixed; inset: 0; display: grid; grid-template-rows: 1fr var(--bar-h); }
+  #main { position: relative; display: flex; min-height: 0; }
+  #stage-wrap { flex: 1; display: grid; place-items: center; min-width: 0; padding: 8px; }
+  #stage { position: relative; aspect-ratio: var(--ar, 4 / 3); width: min(100%, calc((100dvh - var(--bar-h) - 16px) * var(--ar-n, 1.3333))); background: #000; }
+  :fullscreen #stage-wrap { padding: 0; }
+  :fullscreen #stage { width: min(100%, calc(100dvh * var(--ar-n, 1.3333))); }
+  #screen, #preview { position: absolute; inset: 0; }
+  #screen canvas { width: 100% !important; height: 100% !important; display: block; }
+  #screen > div { position: absolute; inset: 0; white-space: pre; font: 14px monospace; line-height: 14px; color: #aaa; overflow: hidden; }
+  #preview { display: none; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+
+  /* boot overlay */
+  #boot { position: absolute; inset: 0; display: grid; place-items: center; background: #000; color: #fff; z-index: 2; transition: opacity .25s; }
+  #boot.hidden { opacity: 0; pointer-events: none; }
+  #boot .inner { width: min(360px, 80%); text-align: center; }
+  #boot .logo { display: inline-grid; grid-template-columns: 18px 18px; gap: 3px; transform: skewY(-6deg); margin-bottom: 18px; }
+  #boot .logo i { width: 18px; height: 18px; display: block; }
+  #boot .msg { font-size: 14px; margin-bottom: 12px; min-height: 18px; }
+  .progress { height: 22px; padding: 3px; box-shadow: var(--sunken); background: var(--face); display: flex; gap: 2px; }
+  .progress i { width: 10px; background: var(--navy); flex: none; }
+  #boot .detail { margin-top: 8px; color: #aaa; font-size: 11px; min-height: 14px; }
+
+  /* windows and dialogs */
+  .win { background: var(--face); box-shadow: var(--raised); padding: 3px; display: flex; flex-direction: column; }
+  .win > .title { background: var(--navy); color: #fff; font-weight: bold; padding: 3px 4px 3px 6px; display: flex; align-items: center; gap: 6px; min-height: 22px; }
+  .win > .title span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .win > .body { padding: 12px; }
+  .tbtn { width: 18px; height: 16px; padding: 0; border: 0; background: var(--face); box-shadow: var(--raised); font-weight: bold; font-size: 11px; line-height: 14px; cursor: pointer; }
+  .btn { min-width: 76px; height: 24px; padding: 0 10px; border: 0; background: var(--face); box-shadow: var(--raised); cursor: pointer; }
+  .btn:active, .btn.on { box-shadow: var(--pressed); }
+  .btn:focus-visible, .tbtn:focus-visible { outline: 1px dotted #000; outline-offset: -5px; }
+  .btn.default { box-shadow: inset 0 0 0 1px #000, var(--raised); }
+
+  #notes { width: min(340px, 34vw); margin: 8px 8px 8px 0; display: none; }
+  #notes.open { display: flex; }
+  #notes .body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 8px; }
+  #notes .field { background: #fff; box-shadow: var(--sunken); padding: 8px 10px; overflow: auto; }
+  #notes .now { font-weight: bold; }
+  #notes .text { flex: 1; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+  #notes .label { color: #444; }
+  #notes .next { color: #333; }
+
+  #dialog-layer { position: fixed; inset: 0 0 var(--bar-h) 0; display: none; place-items: center; z-index: 5; }
+  #dialog-layer.open { display: grid; }
+  #dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100% - 32px); }
+  #dialog .body { display: flex; gap: 14px; overflow: auto; }
+  #dialog .icon { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: bold 22px/1 Georgia, serif; }
+  #dialog .icon.info { background: #0000ff; }
+  #dialog .icon.warn { background: #ff0000; }
+  #dialog .content p { margin: 0 0 8px; }
+  #dialog code { background: #fff; padding: 0 3px; font: 12px/1.4 "Courier New", monospace; }
+  #dialog ol { margin: 0 0 8px; padding-left: 18px; }
+  #dialog .actions { display: flex; justify-content: center; gap: 8px; padding: 0 12px 12px; flex-wrap: wrap; }
+
+  /* host taskbar */
+  #bar { background: var(--face); border-top: 1px solid #dfdfdf; box-shadow: inset 0 1px var(--hi); display: flex; align-items: center; gap: 4px; padding: 3px 3px 2px; position: relative; z-index: 6; min-width: 0; }
+  :fullscreen #app { grid-template-rows: 1fr 0; }
+  :fullscreen #bar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h); transform: translateY(100%); transition: transform .15s; }
+  :fullscreen #bar.peek { transform: none; }
+  #start { font-weight: bold; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 8px 0 5px; height: 28px; }
+  .flag { display: inline-grid; grid-template-columns: 7px 7px; gap: 1px; transform: skewY(-8deg); }
+  .flag i { width: 7px; height: 7px; display: block; }
+  .sep { width: 2px; height: 26px; box-shadow: inset 1px 0 var(--lo), inset -1px 0 var(--hi); margin: 0 2px; }
+  #deckname { flex: 0 1 auto; min-width: 0; height: 28px; padding: 0 10px; display: flex; align-items: center; box-shadow: var(--pressed); background: repeating-conic-gradient(#fff 0 25%, var(--face) 0 50%) 0 0 / 2px 2px; font-weight: bold; max-width: 32vw; }
+  #deckname span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #nav { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+  #nav .btn { min-width: 32px; height: 28px; }
+  #counter { min-width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
+  #tray { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 10px; box-shadow: inset -1px -1px var(--hi), inset 1px 1px var(--lo); white-space: nowrap; }
+  #led { width: 10px; height: 10px; border-radius: 50%; background: #808080; box-shadow: inset 1px 1px #404040; }
+  #led.busy { background: #0f0; }
+  #led.off { background: #808080; }
+  .wide-only { display: inline-flex; align-items: center; justify-content: center; }
+  #stage.crisp canvas, #stage.crisp #preview { image-rendering: pixelated; }
+  @media (max-width: 640px) {
+    .wide-only { display: none; }
+    #deckname { max-width: 40vw; }
+    #start .lbl { display: none; }
+    #main { flex-direction: column; }
+    #notes { width: auto; height: 38%; margin: 0 8px 8px; }
+    #stage { width: min(100%, calc((62dvh - var(--bar-h)) * var(--ar-n, 1.3333))); }
+  }
+
+  /* start menu */
+  #menu { position: absolute; left: 2px; bottom: calc(var(--bar-h) - 2px); display: none; flex-direction: row; padding: 3px; min-width: 260px; max-height: 70vh; z-index: 7; }
+  #menu.open { display: flex; }
+  #menu .band { width: 24px; background: linear-gradient(#000080, #1084d0); color: #c0c0c0; writing-mode: vertical-rl; transform: rotate(180deg); font: bold 17px Arial, sans-serif; padding: 8px 0; letter-spacing: 1px; }
+  #menu .band b { color: #fff; }
+  #menu ul { list-style: none; margin: 0; padding: 0; flex: 1; overflow: auto; }
+  #menu li button { width: 100%; text-align: left; border: 0; background: none; padding: 6px 10px 6px 8px; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  #menu li button:hover, #menu li button:focus-visible { background: var(--navy); color: #fff; outline: 0; }
+  #menu li button .ico { width: 20px; height: 16px; flex: none; background: #c0c0c0; box-shadow: inset -1px -1px #000, inset 1px 1px #fff; position: relative; }
+  #menu li button .ico::after { content: ""; position: absolute; inset: 3px 4px; background: var(--teal); }
+  #menu li .meta { margin-left: auto; color: inherit; opacity: .7; }
+  #menu hr { border: 0; border-top: 1px solid var(--lo); border-bottom: 1px solid var(--hi); margin: 3px 2px; }
+  #menu li.current button { font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div id="stage-wrap">
+      <div id="stage">
+        <div id="screen"><div></div><canvas></canvas></div>
+        <img id="preview" alt="">
+        <div id="boot">
+          <div class="inner">
+            <div class="logo" aria-hidden="true"><i style="background:#f00"></i><i style="background:#0f0"></i><i style="background:#00f"></i><i style="background:#ff0"></i></div>
+            <div class="msg" id="boot-msg">Starting Windows 95…</div>
+            <div class="progress" id="boot-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="detail" id="boot-detail"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <section class="win" id="notes" aria-label="Speaker notes">
+      <div class="title"><span>Speaker Notes</span><button class="tbtn" id="notes-close" aria-label="Close notes">×</button></div>
+      <div class="body">
+        <div class="field now" id="notes-now">—</div>
+        <div class="field text" id="notes-text"></div>
+        <div class="field next"><span class="label">Next: </span><span id="notes-next">—</span></div>
+      </div>
+    </section>
+  </div>
+  <div id="bar">
+    <button class="btn" id="start" aria-haspopup="true" aria-expanded="false"><span class="flag" aria-hidden="true"><i style="background:#f00"></i><i style="background:#0c0"></i><i style="background:#00f"></i><i style="background:#fc0"></i></span><span class="lbl">Decks</span></button>
+    <div class="sep"></div>
+    <div id="deckname"><span id="deck-title">Win95 Slides</span></div>
+    <div id="nav">
+      <button class="btn" id="prev" aria-label="Previous slide">◀</button>
+      <span id="counter">–</span>
+      <button class="btn" id="next" aria-label="Next slide">▶</button>
+      <div class="sep wide-only"></div>
+      <button class="btn wide-only" id="notes-btn">Notes</button>
+      <button class="btn" id="fs-btn" aria-label="Full screen">⛶</button>
+    </div>
+    <div id="tray"><span id="led" class="off" title="Disk activity"></span><span id="mode-label" class="wide-only"></span><span id="clock"></span></div>
+    <div class="win" id="menu" role="menu">
+      <div class="band"><span><b>Win95</b> Slides</span></div>
+      <ul id="menu-list"></ul>
+    </div>
+  </div>
+</div>
+<div id="dialog-layer"><div class="win" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+  <div class="title"><span id="dialog-title"></span></div>
+  <div class="body"><div class="icon" id="dialog-icon"></div><div class="content" id="dialog-content"></div></div>
+  <div class="actions" id="dialog-actions"></div>
+</div></div>
+
+<script src="sync-xhr.js"></script>
+<script src="runtime/libv86.js"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const MODE = params.get("mode") || "show"; // show | snapshot | preview
+
+const ui = {
+  deck: null, slide: 0, total: 0, live: false, emulator: null,
+  setCounter() {
+    $("counter").textContent = this.total ? (this.slide > this.total ? "End" : `Slide ${this.slide} of ${this.total}`) : "–";
+    const s = this.deck?.slides || [];
+    const cur = s[this.slide - 1], nxt = s[this.slide];
+    $("notes-now").textContent = cur ? `${this.slide}. ${cur.title || "(untitled)"}` : this.slide > this.total ? "End of show" : "—";
+    $("notes-text").textContent = cur?.notes || (cur ? "No notes for this slide." : "");
+    $("notes-next").textContent = nxt ? `${this.slide + 1}. ${nxt.title || "(untitled)"}` : "End of show";
+  },
+};
+
+// ---------- boot overlay ----------
+function bootStatus(msg, frac, detail = "") {
+  $("boot-msg").textContent = msg;
+  $("boot-detail").textContent = detail;
+  const bar = $("boot-bar");
+  const blocks = frac == null ? 0 : Math.round(Math.max(0, Math.min(1, frac)) * 24);
+  if (bar.childElementCount !== blocks) bar.innerHTML = "<i></i>".repeat(blocks);
+  bar.setAttribute("aria-valuenow", frac == null ? 0 : Math.round(frac * 100));
+}
+const hideBoot = () => $("boot").classList.add("hidden");
+
+// ---------- dialogs ----------
+function dialog({ title, html, icon = "info", buttons = [{ label: "OK" }] }) {
+  return new Promise((resolve) => {
+    $("dialog-title").textContent = title;
+    $("dialog-content").innerHTML = html;
+    $("dialog-icon").className = `icon ${icon}`;
+    $("dialog-icon").textContent = icon === "warn" ? "×" : "i";
+    const actions = $("dialog-actions");
+    actions.innerHTML = "";
+    buttons.forEach((b, i) => {
+      const el = document.createElement("button");
+      el.className = "btn" + (i === 0 ? " default" : "");
+      el.textContent = b.label;
+      el.onclick = () => { if (b.keepOpen) return b.onClick?.(el); closeDialog(); resolve(b.value ?? b.label); };
+      actions.append(el);
+    });
+    $("dialog-layer").classList.add("open");
+    ui.emulator?.keyboard_set_enabled?.(false);
+    actions.firstChild?.focus();
+  });
+}
+function closeDialog() {
+  $("dialog-layer").classList.remove("open");
+  ui.emulator?.keyboard_set_enabled?.(true);
+}
+
+// ---------- taskbar ----------
+function tickClock() {
+  $("clock").textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+tickClock();
+setInterval(tickClock, 15000);
+
+$("notes-btn").onclick = () => {
+  const open = $("notes").classList.toggle("open");
+  $("notes-btn").classList.toggle("on", open);
+  try { localStorage.setItem("w95s-notes", open ? "1" : "0"); } catch {}
+};
+$("notes-close").onclick = () => $("notes-btn").click();
+try { if (localStorage.getItem("w95s-notes") === "1") $("notes-btn").click(); } catch {}
+
+$("fs-btn").onclick = () => document.fullscreenElement ? document.exitFullscreen() : $("app").requestFullscreen().catch(() => {});
+document.addEventListener("mousemove", (e) => {
+  if (document.fullscreenElement) $("bar").classList.toggle("peek", e.clientY > innerHeight - 48 || $("menu").classList.contains("open"));
+});
+
+function toggleMenu(open = !$("menu").classList.contains("open")) {
+  $("menu").classList.toggle("open", open);
+  $("start").classList.toggle("on", open);
+  $("start").setAttribute("aria-expanded", open);
+}
+$("start").onclick = (e) => { e.stopPropagation(); toggleMenu(); };
+document.addEventListener("click", (e) => { if (!$("menu").contains(e.target)) toggleMenu(false); });
+
+function goDeck(name, mode = MODE) {
+  const p = new URLSearchParams({ deck: name });
+  if (mode !== "show") p.set("mode", mode);
+  location.search = p.toString(); // a fresh page restores the pristine snapshot
+}
+
+async function buildMenu(decks, current, hasWindows) {
+  const list = $("menu-list");
+  const item = (label, meta, onClick, cls = "") => {
+    const li = document.createElement("li");
+    li.className = cls;
+    li.innerHTML = `<button role="menuitem"><span class="ico"></span><span class="lbl"></span><span class="meta"></span></button>`;
+    li.querySelector(".lbl").textContent = label;
+    li.querySelector(".meta").textContent = meta;
+    li.querySelector("button").onclick = onClick;
+    list.append(li);
+  };
+  decks.forEach((d) => item(d.title, `${d.slides}`, () => goDeck(d.name), d.name === current ? "current" : ""));
+  list.append(document.createElement("hr"));
+  if (MODE !== "preview") item("Preview without Windows", "", () => goDeck(current, "preview"));
+  if (MODE === "preview" && hasWindows) item("Present in Windows 95", "", () => goDeck(current, "show"));
+  if (MODE !== "snapshot") item("Make a snapshot…", "", () => goDeck(current, "snapshot"));
+}
+
+// ---------- nav ----------
+function nav(cmd) {
+  if (MODE === "preview") return previewGo(cmd);
+  if (ui.live) ui.emulator.serial0_send(cmd);
+}
+$("prev").onclick = () => nav("p");
+$("next").onclick = () => nav("n");
+
+// ---------- preview mode (no Windows needed) ----------
+function previewGo(cmd) {
+  const n = ui.total;
+  ui.slide = cmd === "n" ? Math.min(n, ui.slide + 1) : cmd === "p" ? Math.max(1, ui.slide - 1) : cmd === "h" ? 1 : cmd === "e" ? n : ui.slide;
+  $("preview").src = `decks/${ui.deck.name}/preview/slide${String(ui.slide).padStart(3, "0")}.png`;
+  $("preview").alt = ui.deck.slides[ui.slide - 1]?.title || "";
+  ui.setCounter();
+}
+function startPreview(reason) {
+  $("screen").style.display = "none";
+  $("preview").style.display = "block";
+  $("mode-label").textContent = "Preview";
+  hideBoot();
+  ui.slide = 1;
+  previewGo("");
+  $("preview").onclick = () => previewGo("n");
+  $("preview").oncontextmenu = (e) => { e.preventDefault(); previewGo("p"); };
+  document.addEventListener("keydown", (e) => {
+    if ($("dialog-layer").classList.contains("open")) return;
+    const k = { ArrowRight: "n", ArrowDown: "n", PageDown: "n", " ": "n", Enter: "n", ArrowLeft: "p", ArrowUp: "p", PageUp: "p", Backspace: "p", Home: "h", End: "e" }[e.key];
+    if (k) { e.preventDefault(); previewGo(k); }
+  });
+  if (reason) dialog({ title: "Windows 95 is not set up yet", html: reason, buttons: [{ label: "Preview slides" }] });
+}
+
+// ---------- serial link to SHOW.EXE ----------
+function attachSerial(emulator, onHello) {
+  let line = "";
+  emulator.add_listener("serial0-output-byte", (byte) => {
+    const ch = String.fromCharCode(byte);
+    if (ch !== "\n") { if (line.length < 200) line += ch; return; }
+    const msg = line.trim().split(/\s+/);
+    line = "";
+    if (msg[0] === "HELLO") { ui.live = true; ui.total = +msg[1]; onHello(); }
+    else if (msg[0] === "SLIDE") { ui.live = true; ui.slide = +msg[1]; ui.total = +msg[2]; ui.setCounter(); }
+    else if (msg[0] === "BYE") { ui.live = false; ui.slide = 0; ui.setCounter(); $("counter").textContent = "Show ended"; }
+  });
+}
+
+// ---------- keyboard injection: Win+R, type the path, Enter ----------
+// Set-1 scancodes. Punctuation differs per Windows keyboard layout.
+const SC = { a: 0x1e, b: 0x30, c: 0x2e, d: 0x20, e: 0x12, f: 0x21, g: 0x22, h: 0x23, i: 0x17, j: 0x24, k: 0x25, l: 0x26,
+  m: 0x32, n: 0x31, o: 0x18, p: 0x19, q: 0x10, r: 0x13, s: 0x1f, t: 0x14, u: 0x16, v: 0x2f, w: 0x11, x: 0x2d, y: 0x15, z: 0x2c };
+const LAYOUTS = {
+  us: { ".": [0x34], ":": ["shift", 0x27], "\\": [0x2b] },
+  de: { ".": [0x34], ":": ["shift", 0x34], "\\": ["altgr", 0x0c], y: [0x2c], z: [0x15] },
+};
+function typeScancodes(text, layout) {
+  const map = LAYOUTS[layout] || LAYOUTS.us;
+  const out = [];
+  for (const ch of text.toLowerCase()) {
+    const spec = map[ch] || (SC[ch] ? [SC[ch]] : null);
+    if (!spec) throw new Error(`cannot type '${ch}' on layout ${layout}`);
+    const key = spec[spec.length - 1];
+    const mod = spec.length > 1 ? spec[0] : null;
+    if (mod === "shift") out.push(0x2a);
+    if (mod === "altgr") out.push(0xe0, 0x38);
+    out.push(key, key | 0x80);
+    if (mod === "shift") out.push(0xaa);
+    if (mod === "altgr") out.push(0xe0, 0xb8);
+  }
+  return out;
+}
+async function launchViaRunDialog(emulator, cfg) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  await emulator.keyboard_send_scancodes([0xe0, 0x5b, 0x13, 0x93, 0xe0, 0xdb], 30); // Win+R
+  await sleep(1200);
+  await emulator.keyboard_send_scancodes(typeScancodes(`${cfg.cdDrive}:\\show.exe`, cfg.keyboard), 25);
+  await sleep(200);
+  await emulator.keyboard_send_scancodes([0x1c, 0x9c], 30); // Enter
+}
+
+// ---------- show / snapshot modes ----------
+async function fetchWithProgress(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  const total = +res.headers.get("content-length") || 0;
+  const reader = res.body.getReader();
+  const chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    if (total) onProgress(got / total);
+  }
+  return new Blob(chunks).arrayBuffer();
+}
+
+function startEmulator(cfg, deck) {
+  window.syncXhrPrefixes.push(cfg.disk.url.replace(/[^/]*$/, ""));
+  const snapshot = MODE === "snapshot";
+  const emulator = (ui.emulator = new V86({
+    wasm_path: "runtime/v86.wasm",
+    memory_size: cfg.memoryMB * 1024 * 1024,
+    vga_memory_size: cfg.vgaMB * 1024 * 1024,
+    screen_container: $("screen"),
+    bios: { url: "bios/seabios.bin" },
+    vga_bios: { url: "bios/vgabios.bin" },
+    hda: { url: cfg.disk.url, size: cfg.disk.size, async: true, fixed_chunk_size: cfg.disk.chunk, use_parts: true },
+    // no cdrom here: the drive exists but stays empty, so the snapshot never caches a disc
+    ...(snapshot ? {} : { initial_state: { url: cfg.state } }),
+    autostart: true,
+  }));
+
+  emulator.add_listener("download-progress", (e) => {
+    if (e.file_name?.includes("state")) bootStatus("Restoring Windows 95…", e.lengthComputable ? e.loaded / e.total : null,
+      e.total ? `${(e.loaded / 2 ** 20).toFixed(1)} of ${(e.total / 2 ** 20).toFixed(1)} MB` : "");
+  });
+  emulator.add_listener("download-error", (e) => {
+    const missingState = String(e?.file_name || "").includes("state");
+    bootStatus("Could not load " + (missingState ? "the snapshot" : "a file"), 0, String(e?.file_name || ""));
+    if (missingState) dialog({ title: "No snapshot yet", icon: "warn", html:
+      `<p>There is no Windows 95 snapshot at <code>${cfg.state}</code>.</p><p>Open the snapshot maker to boot your disk once and save one.</p>`,
+      buttons: [{ label: "Make a snapshot", value: "snap" }, { label: "Preview slides", value: "prev" }] })
+      .then((v) => goDeck(deck.name, v === "snap" ? "snapshot" : "preview"));
+  });
+  emulator.add_listener("screen-set-size", ([w, h]) => {
+    if (w > 0 && h > 0 && w / h > 1 && w / h < 2) setAspect(w, h);
+  });
+
+  // disk activity LED: the sync shim sends one request per part
+  const led = $("led");
+  let ledTimer;
+  const origOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (m, url, ...rest) {
+    if (String(url).includes("disks/")) { led.className = "busy"; clearTimeout(ledTimer); ledTimer = setTimeout(() => (led.className = ""), 150); }
+    return origOpen.call(this, m, url, ...rest);
+  };
+
+  if (snapshot) return snapshotMode(emulator, cfg);
+
+  attachSerial(emulator, () => {
+    hideBoot();
+    $("mode-label").textContent = "Live";
+    ui.setCounter();
+  });
+
+  emulator.add_listener("emulator-started", async () => {
+    bootStatus("Inserting the slide CD…", 1, deck.title);
+    let iso;
+    try {
+      iso = await fetchWithProgress(`decks/${deck.name}/${deck.iso}`, (f) => bootStatus("Inserting the slide CD…", f, deck.title));
+    } catch (err) {
+      return dialog({ title: "Deck missing", icon: "warn", html: `<p>${err.message}</p><p>Build it with <code>python3 tools/build_deck.py</code>.</p>` });
+    }
+    await emulator.set_cdrom({ buffer: iso });
+    bootStatus("Starting the slide show…", 1, "Waiting for AutoPlay");
+    await waitFor(() => ui.live, cfg.autorunWaitMs);
+    if (!ui.live) {
+      bootStatus("Starting the slide show…", 1, `Running ${cfg.cdDrive}:\\SHOW.EXE`);
+      await launchViaRunDialog(emulator, cfg);
+      await waitFor(() => ui.live, 10000);
+    }
+    if (!ui.live) {
+      hideBoot();
+      const retry = await dialog({ title: "Slide Show", icon: "warn", html:
+        `<p>The slide show did not report back from Windows.</p>
+         <ol><li>Open <b>My Computer</b> and the CD drive, then run <b>SHOW.EXE</b>.</li>
+         <li>If your CD drive is not <b>${cfg.cdDrive}:</b> or your keyboard is not <b>${cfg.keyboard.toUpperCase()}</b>, set <code>cdDrive</code> / <code>keyboard</code> in <code>config.json</code>.</li></ol>
+         <p>Slides still work without this link; only the counter and notes need it.</p>`,
+        buttons: [{ label: "Try again", value: "retry" }, { label: "Close" }] });
+      if (retry === "retry") launchViaRunDialog(emulator, cfg);
+    }
+  });
+}
+
+function waitFor(cond, ms) {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    (function check() { cond() || performance.now() - t0 > ms ? resolve() : setTimeout(check, 100); })();
+  });
+}
+
+function snapshotMode(emulator, cfg) {
+  $("mode-label").textContent = "Snapshot maker";
+  emulator.add_listener("emulator-started", hideBoot);
+  bootStatus("Booting from your disk…", null, "Cold boot, this takes a while");
+  const save = async (btn) => {
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      const state = await emulator.save_state();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([state]));
+      a.download = "win95.bin";
+      a.click();
+      btn.textContent = "Saved";
+      setTimeout(() => { btn.disabled = false; btn.textContent = "Save snapshot"; }, 1500);
+    } catch (err) {
+      btn.textContent = "Save failed";
+      console.error(err);
+    }
+  };
+  const showPanel = () => dialog({ title: "Make a snapshot", html:
+    `<ol><li>Let Windows 95 finish booting to a quiet desktop (close any windows and messages).</li>
+     <li>Leave the CD drive empty; decks are inserted after the snapshot loads.</li>
+     <li>Click <b>Save snapshot</b>, then run<br><code>node tools/compress_state.mjs ~/Downloads/win95.bin</code></li></ol>
+     <p>Hide this box to use Windows; it comes back from the <b>Snapshot</b> button.</p>`,
+    buttons: [{ label: "Save snapshot", keepOpen: true, onClick: save }, { label: "Hide" }] });
+  $("notes-btn").textContent = "Snapshot";
+  $("notes-btn").onclick = showPanel;
+  setTimeout(showPanel, 300);
+}
+
+// Hard pixels only when each guest pixel covers >= 1.5 screen pixels; below that, nearest-neighbour turns dither into moiré.
+let guestW = 640;
+function updateCrisp() {
+  $("stage").classList.toggle("crisp", ($("stage").clientWidth * devicePixelRatio) / guestW >= 1.5);
+}
+new ResizeObserver(updateCrisp).observe($("stage"));
+function setAspect(w, h) {
+  guestW = w;
+  $("stage").style.setProperty("--ar", `${w} / ${h}`);
+  $("stage").style.setProperty("--ar-n", (w / h).toFixed(4));
+  updateCrisp();
+}
+
+// ---------- start ----------
+(async function main() {
+  const getJSON = (u) => fetch(u, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const [cfg, decks] = await Promise.all([getJSON("config.json"), getJSON("decks/index.json")]);
+  const list = decks || [];
+  const name = params.get("deck") || list[0]?.name;
+  const deck = name ? await getJSON(`decks/${name}/deck.json`) : null;
+  ui.deck = deck;
+  ui.total = deck?.slides.length || 0;
+  if (deck) {
+    $("deck-title").textContent = deck.title;
+    document.title = `${deck.title} · Win95 Slides`;
+    setAspect(...deck.resolution);
+  }
+  buildMenu(list, name, !!cfg);
+  ui.setCounter();
+
+  if (!deck && MODE !== "snapshot") {
+    bootStatus("No decks yet", 0);
+    return dialog({ title: "Win95 Slides", html: "<p>Build a deck first:</p><p><code>python3 tools/build_deck.py decks/welcome.json</code></p>" });
+  }
+  if (MODE === "preview") return startPreview();
+  if (!cfg) return startPreview(
+    `<p>Add your own Windows 95 disk image to present inside real Windows:</p>
+     <ol><li><code>node tools/prepare_disk.mjs win95.img</code></li><li>Open <code>?mode=snapshot</code>, boot, save the snapshot.</li>
+     <li><code>node tools/compress_state.mjs win95.bin</code></li></ol><p>Meanwhile, you can rehearse with the slide previews.</p>`);
+  if (typeof V86 === "undefined") return dialog({ title: "Emulator missing", icon: "warn", html: "<p>runtime/libv86.js did not load.</p>" });
+  if (MODE === "show" && !(await fetch(cfg.state, { method: "HEAD" }).then((r) => r.ok).catch(() => false))) {
+    bootStatus("No snapshot yet", 0);
+    const v = await dialog({ title: "No snapshot yet", icon: "warn", html:
+      `<p>Your disk is prepared, but there is no snapshot at <code>${cfg.state}</code>.</p><p>Boot your disk once in the snapshot maker and save one.</p>`,
+      buttons: [{ label: "Make a snapshot", value: "snap" }, { label: "Preview slides", value: "prev" }] });
+    return goDeck(name, v === "snap" ? "snapshot" : "preview");
+  }
+  startEmulator(cfg, deck || { name: "", title: "", slides: [] });
+})();
+</script>
+</body>
+</html>

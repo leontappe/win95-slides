@@ -1,0 +1,17 @@
+{
+  "name": "win95-slides",
+  "version": "1.0.0",
+  "description": "Present slides inside real Windows 95 in the browser (v86)",
+  "scripts": {
+    "serve": "python3 -m http.server 8080 -d public",
+    "deck": "python3 tools/build_deck.py",
+    "viewer": "sh viewer/build.sh",
+    "prepare-disk": "node tools/prepare_disk.mjs",
+    "compress-state": "node tools/compress_state.mjs",
+    "update-v86": "cp node_modules/v86/build/libv86.js node_modules/v86/build/v86.wasm public/runtime/"
+  },
+  "dependencies": {
+    "v86": "^0.5.472"
+  },
+  "private": true
+}

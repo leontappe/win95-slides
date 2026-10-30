@@ -1,0 +1,45 @@
+{
+  "name": "welcome",
+  "title": "Presenting from 1995",
+  "theme": "teal",
+  "resolution": [
+    640,
+    480
+  ],
+  "iso": "deck.iso",
+  "isoSize": 1318912,
+  "slides": [
+    {
+      "title": "Presenting from 1995",
+      "notes": "Welcome everyone. Everything you see is a real Windows 95 desktop, emulated in the browser."
+    },
+    {
+      "title": "What is happening right now",
+      "notes": "Point out the taskbar briefly visible before the show starts."
+    },
+    {
+      "title": "How a deck is made",
+      "notes": ""
+    },
+    {
+      "title": "Author vs. machine",
+      "notes": ""
+    },
+    {
+      "title": "Typical load, in seconds",
+      "notes": "Cold boot figure is illustrative; snapshot restore depends on connection speed."
+    },
+    {
+      "title": "Where the bytes go",
+      "notes": ""
+    },
+    {
+      "title": "Keys during the show",
+      "notes": ""
+    },
+    {
+      "title": "Where do you want to go today?",
+      "notes": ""
+    }
+  ]
+}

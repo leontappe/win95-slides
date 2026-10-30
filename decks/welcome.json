@@ -1,0 +1,86 @@
+{
+  "name": "welcome",
+  "title": "Presenting from 1995",
+  "theme": "teal",
+  "transition": "wipe",
+  "footer": "Win95 Slides",
+  "slides": [
+    {
+      "layout": "title",
+      "title": "Presenting from 1995",
+      "subtitle": "Real Windows 95, in a browser tab, running your slides",
+      "byline": "Built with Claude",
+      "notes": "Welcome everyone. Everything you see is a real Windows 95 desktop, emulated in the browser."
+    },
+    {
+      "layout": "bullets",
+      "title": "What is happening right now",
+      "bullets": [
+        "An x86 PC is emulated in WebAssembly (v86)",
+        "Windows 95 resumes from a RAM snapshot: no boot screen",
+        ["The hard disk streams in 256 KB pieces as Windows reads it"],
+        "This deck is a CD inserted after the snapshot loads",
+        "SHOW.EXE, a native Win32 program, draws every slide"
+      ],
+      "notes": "Point out the taskbar briefly visible before the show starts."
+    },
+    {
+      "layout": "section",
+      "number": 2,
+      "title": "How a deck is made",
+      "subtitle": "JSON in, bootable CD out",
+      "transition": "box"
+    },
+    {
+      "layout": "two-column",
+      "title": "Author vs. machine",
+      "left": {
+        "heading": "You (or Claude)",
+        "bullets": ["Write deck JSON", "Pick a theme and layouts", "Add speaker notes"]
+      },
+      "right": {
+        "heading": "The build",
+        "bullets": ["Renders 16-colour BMPs", "Packs an ISO with AUTORUN.INF", "Web player inserts the CD"]
+      }
+    },
+    {
+      "layout": "chart",
+      "title": "Typical load, in seconds",
+      "chart": {
+        "type": "bar",
+        "labels": ["Cold boot", "Snapshot restore", "Deck CD insert"],
+        "values": [48, 3, 1],
+        "multicolor": true
+      },
+      "notes": "Cold boot figure is illustrative; snapshot restore depends on connection speed.",
+      "transition": "blinds"
+    },
+    {
+      "layout": "chart",
+      "title": "Where the bytes go",
+      "chart": {
+        "type": "pie",
+        "labels": ["RAM snapshot", "Disk pieces read", "Deck CD", "Emulator"],
+        "values": [12, 20, 2, 2]
+      }
+    },
+    {
+      "layout": "table",
+      "title": "Keys during the show",
+      "rows": [
+        ["Action", "Keys"],
+        ["Next slide", "Right, Space, Enter, click"],
+        ["Previous slide", "Left, Backspace, right-click"],
+        ["Jump to slide", "Number then Enter"],
+        ["Black / white screen", "B / W"],
+        ["Exit", "Esc"]
+      ]
+    },
+    {
+      "layout": "statement",
+      "text": "Where do you want to go today?",
+      "attribution": "Microsoft, 1994",
+      "transition": "dissolve"
+    }
+  ]
+}

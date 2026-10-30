@@ -1,0 +1,7 @@
+node_modules/
+public/disks/
+public/state/
+public/config.json
+*.img
+*.bin
+!public/bios/*.bin

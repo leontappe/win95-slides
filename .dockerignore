@@ -1,0 +1,4 @@
+node_modules
+*.img
+*.bin
+!public/bios/*.bin
